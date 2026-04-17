@@ -25,6 +25,13 @@ export default function LoginPage() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   ))
 
+  async function handleGoogleSignIn() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setEmailErr('')
@@ -216,6 +223,57 @@ export default function LoginPage() {
           </button>
 
         </form>
+
+        {/* ── Divider ── */}
+        <div
+          className="animate-fade-up"
+          style={{
+            animationDelay: '0.38s',
+            display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0',
+          }}
+        >
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border-solid)' }} />
+          <span style={{ fontSize: 13, color: 'var(--color-text-3)', flexShrink: 0 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'var(--color-border-solid)' }} />
+        </div>
+
+        {/* ── Google button ── */}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          className="animate-fade-up"
+          style={{
+            animationDelay: '0.42s',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+            width: '100%', height: 48,
+            border: '1.5px solid var(--color-border-solid)',
+            borderRadius: 'var(--radius-pill)',
+            background: 'var(--color-card)',
+            color: 'var(--color-text-1)',
+            fontFamily: 'var(--font-body)',
+            fontWeight: 600, fontSize: 15,
+            cursor: 'pointer',
+            transition: 'border-color 0.2s, box-shadow 0.2s, transform 0.15s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-primary)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 0 3px var(--color-primary-ring)'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--color-border-solid)'
+            ;(e.currentTarget as HTMLButtonElement).style.boxShadow = 'none'
+            ;(e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.84l6.1-6.1C34.46 3.19 29.5 1 24 1 14.82 1 7.07 6.48 3.64 14.22l7.1 5.52C12.4 13.67 17.73 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.52 24.5c0-1.64-.15-3.22-.42-4.75H24v9h12.7c-.55 2.96-2.2 5.47-4.67 7.16l7.2 5.6C43.1 37.27 46.52 31.36 46.52 24.5z"/>
+            <path fill="#FBBC05" d="M10.74 28.26A14.53 14.53 0 0 1 9.5 24c0-1.48.26-2.91.74-4.26l-7.1-5.52A23.94 23.94 0 0 0 0 24c0 3.86.92 7.5 2.56 10.72l8.18-6.46z"/>
+            <path fill="#34A853" d="M24 47c5.5 0 10.12-1.82 13.5-4.94l-7.2-5.6c-1.83 1.23-4.18 1.95-6.3 1.95-6.27 0-11.6-4.17-13.26-9.74l-8.18 6.46C7.07 41.52 14.82 47 24 47z"/>
+          </svg>
+          Continue with Google
+        </button>
 
         {/* ── Footer link ── */}
         <div
