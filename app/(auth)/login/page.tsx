@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   return (
     <div style={{ position: 'relative', zIndex: 1, width: '100%', maxWidth: 460, padding: '0 24px' }}>
-      <div className="auth-card auth-card-pad" style={{ padding: '48px 40px 40px' }}>
+      <div className="auth-card auth-card-no-bar auth-card-pad" style={{ padding: '48px 40px 40px' }}>
 
         {/* ── Logo ── */}
         <div
