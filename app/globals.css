@@ -1,0 +1,244 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────
+   Budget Book Design Tokens
+   All values sourced from the reference HTML mockups.
+───────────────────────────────────────────────────── */
+@theme {
+  /* Fonts — CSS vars injected by next/font at runtime */
+  --font-display: var(--font-fraunces), 'Georgia', serif;
+  --font-body:    var(--font-plus-jakarta-sans), system-ui, sans-serif;
+
+  /* Colors */
+  --color-bg:             #F8F7F5;
+  --color-card:           #FFFFFF;
+  --color-primary:        #3B7DD8;
+  --color-primary-hover:  #2C6BC4;
+  --color-primary-light:  rgba(59, 125, 216, 0.08);
+  --color-primary-ring:   rgba(59, 125, 216, 0.13);
+  --color-income:         #4CAF82;
+  --color-income-light:   rgba(76, 175, 130, 0.10);
+  --color-expense:        #E07060;
+  --color-expense-light:  rgba(224, 112, 96, 0.08);
+  --color-text-1:         #1A1A2E;
+  --color-text-2:         #6B7280;
+  --color-text-3:         #9CA3AF;
+  --color-border:         rgba(0, 0, 0, 0.06);
+  --color-border-solid:   #E8E8E6;
+
+  /* Border radius */
+  --radius-card:  24px;
+  --radius-input: 14px;
+  --radius-pill:  999px;
+
+  /* Shadows */
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.09), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-btn:  0 2px 8px rgba(59, 125, 216, 0.25);
+}
+
+/* ─────────────────────────────────────────────────────
+   Base styles
+───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg);
+  color: var(--color-text-1);
+  min-height: 100vh;
+}
+
+/* ─────────────────────────────────────────────────────
+   Keyframe Animations
+───────────────────────────────────────────────────── */
+@keyframes cardEntry {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0)    scale(1);    }
+}
+
+@keyframes fadeUp {
+  0%   { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0);    }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes drift {
+  0%   { transform: translate(0, 0)       scale(1);    }
+  100% { transform: translate(-20px, -28px) scale(1.06); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0);   }
+  15%      { transform: translateX(-5px);}
+  30%      { transform: translateX(5px); }
+  45%      { transform: translateX(-4px);}
+  60%      { transform: translateX(4px); }
+  75%      { transform: translateX(-2px);}
+  90%      { transform: translateX(2px); }
+}
+
+@keyframes successPop {
+  0%   { opacity: 0; transform: scale(0);    }
+  100% { opacity: 1; transform: scale(1);    }
+}
+
+/* ─────────────────────────────────────────────────────
+   Ambient Background Orbs  (rendered by auth layout)
+───────────────────────────────────────────────────── */
+.orb {
+  position: fixed;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+.orb-1 {
+  width: 620px; height: 620px;
+  top: -18%; right: -12%;
+  background: radial-gradient(circle, rgba(59,125,216,0.06) 0%, transparent 68%);
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.orb-2 {
+  width: 500px; height: 500px;
+  bottom: -20%; left: -8%;
+  background: radial-gradient(circle, rgba(76,175,130,0.05) 0%, transparent 68%);
+  animation: drift 22s ease-in-out infinite alternate-reverse;
+}
+.orb-3 {
+  width: 300px; height: 300px;
+  top: 50%; right: 6%;
+  background: radial-gradient(circle, rgba(224,112,96,0.04) 0%, transparent 70%);
+  animation: drift 15s ease-in-out infinite alternate;
+}
+
+/* ─────────────────────────────────────────────────────
+   Auth Card  (shared by login / signup / verify)
+───────────────────────────────────────────────────── */
+.auth-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-elevated);
+  animation: cardEntry 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Top gradient accent bar — suppressed on pages that opt out */
+.auth-card-no-bar::before { display: none; }
+
+.auth-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-income));
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+/* ─────────────────────────────────────────────────────
+   Entrance Animation Helper
+───────────────────────────────────────────────────── */
+.animate-fade-up {
+  animation: fadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ─────────────────────────────────────────────────────
+   Form Inputs
+───────────────────────────────────────────────────── */
+.form-input {
+  width: 100%;
+  height: 48px;
+  border: 1.5px solid var(--color-border-solid);
+  border-radius: var(--radius-input);
+  padding: 0 16px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--color-text-1);
+  background: var(--color-bg);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+}
+.form-input::placeholder { color: var(--color-text-3); }
+.form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3.5px var(--color-primary-ring);
+  background: var(--color-card);
+}
+.form-input.input-error {
+  border-color: var(--color-expense);
+  box-shadow: 0 0 0 3px var(--color-expense-light);
+}
+
+/* ─────────────────────────────────────────────────────
+   Primary Button  (pill shape)
+───────────────────────────────────────────────────── */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 50px;
+  margin-top: 6px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: #fff;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 15.5px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(59, 125, 216, 0.18);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-btn);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(59, 125, 216, 0.15);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.btn-primary .arrow {
+  font-size: 18px;
+  display: inline-block;
+  transition: transform 0.2s;
+}
+.btn-primary:hover:not(:disabled) .arrow {
+  transform: translateX(3px);
+}
+
+/* ─────────────────────────────────────────────────────
+   Button Loading Spinner
+───────────────────────────────────────────────────── */
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: spin 0.7s linear infinite;
+}
+
+/* ─────────────────────────────────────────────────────
+   Responsive tweaks
+───────────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .auth-card-pad { padding: 36px 24px 28px !important; }
+}
