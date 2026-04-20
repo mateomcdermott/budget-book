@@ -74,6 +74,32 @@ function rowHash(row: Record<string, unknown>): string {
   return Math.abs(hash).toString(16).padStart(8, '0')
 }
 
+const CATEGORY_RULES: Array<[RegExp, string]> = [
+  [/starbucks|dunkin|coffee|peet.s|caribou/i, 'Coffee'],
+  [/grubhub|doordash|uber.?eats|postmates|seamless/i, 'Food Delivery'],
+  [/whole foods|trader joe|safeway|kroger|publix|aldi|costco|heb|wegman|stop & shop|food lion|giant|harris teeter|sprouts|market basket/i, 'Groceries'],
+  [/restaurant|pizza|mcdonald|burger king|subway|chipotle|taco bell|wendy.s|kfc|chick.fil|sonic|domino|panera|shake shack|five guys/i, 'Dining'],
+  [/amazon|walmart|target|best buy|home depot|lowe.s|ikea|ebay|etsy|wayfair|chewy/i, 'Shopping'],
+  [/uber|lyft|mbta|bart|mta |amtrak|delta |united air|american air|southwest air|spirit air|jetblue|alaska air/i, 'Travel'],
+  [/netflix|spotify|hulu|disney\+|apple.*tv|hbo|paramount|peacock|youtube.*premium|twitch|audible/i, 'Entertainment'],
+  [/shell |chevron|bp |exxon|mobil|sunoco|marathon|circle k|7-eleven|wawa|sheetz|speedway/i, 'Gas'],
+  [/cvs|walgreens|rite aid|pharmacy|urgent care|hospital|dental|optometrist/i, 'Health'],
+  [/electric|water bill|gas bill|internet|comcast|xfinity|verizon|at&t|t-mobile|spectrum|pg&e|con ed/i, 'Utilities'],
+  [/rent|mortgage|hoa|storage unit/i, 'Housing'],
+  [/planet fitness|la fitness|equinox|peloton|ymca|orangetheory|anytime fitness/i, 'Fitness'],
+  [/venmo|paypal|zelle|cash.?app/i, 'Transfer'],
+  [/payroll|direct deposit|salary/i, 'Income'],
+  [/geico|state farm|allstate|progressive|farmers|liberty mutual/i, 'Insurance'],
+  [/apple\.com|google.*play|microsoft|adobe|dropbox|notion|slack|zoom|github/i, 'Software'],
+]
+
+function guessCategory(name: string): string {
+  for (const [re, cat] of CATEGORY_RULES) {
+    if (re.test(name)) return cat
+  }
+  return ''
+}
+
 function build(
   date: string,
   description: string,
@@ -84,13 +110,14 @@ function build(
   const amount = normalizeAmount(amountRaw)
   const type: 'income' | 'expense' = amount >= 0 ? 'income' : 'expense'
   const original = String(description).trim()
+  const parsedCategory = String(category).trim()
   return {
     date: normalizeDate(date),
     name: cleanName(original),
     original_description: original,
     amount,
     type,
-    category: String(category).trim(),
+    category: parsedCategory || guessCategory(original),
     source,
     raw_hash: rowHash({ date, description: original, amount: amountRaw, source }),
   }
@@ -105,6 +132,7 @@ function detectSource(headers: string[]): string {
   if (cols.has('date') && cols.has('description') && cols.has('amount') && cols.has('running bal.')) return 'bofa'
   if (cols.has('date') && cols.has('description') && cols.has('debit') && cols.has('credit') && cols.has('balance')) return 'bofa_checking'
   if (cols.has('date') && cols.has('description') && cols.has('amount') && cols.has('extended details')) return 'amex'
+  if (cols.has('transaction date') && cols.has('posted date') && cols.has('card no.') && cols.has('description') && cols.has('category') && cols.has('debit') && cols.has('credit')) return 'capital_one_card'
   if (cols.has('transaction date') && cols.has('posted date') && cols.has('description') && cols.has('debit') && cols.has('credit')) return 'citi'
   if (cols.has('transaction date') && cols.has('transaction description') && cols.has('debit amount') && cols.has('credit amount')) return 'wells_fargo'
   if (cols.has('transaction date') && cols.has('description') && cols.has('category') && cols.has('type') && cols.has('amount (usd)')) return 'capital_one'
@@ -167,7 +195,16 @@ function parseCiti(rows: Row[]): ParsedTransaction[] {
     const debit  = normalizeAmount(col(r, 'Debit')  || '0')
     const credit = normalizeAmount(col(r, 'Credit') || '0')
     const amount = credit > 0 ? credit : -Math.abs(debit)
-    return build(col(r, 'Transaction Date'), col(r, 'Description'), amount, 'citi_csv')
+    return build(col(r, 'Transaction Date'), col(r, 'Description'), amount, 'citi_csv', col(r, 'Category'))
+  })
+}
+
+function parseCapitalOneCard(rows: Row[]): ParsedTransaction[] {
+  return rows.map(r => {
+    const debit  = normalizeAmount(col(r, 'Debit')  || '0')
+    const credit = normalizeAmount(col(r, 'Credit') || '0')
+    const amount = credit > 0 ? credit : -Math.abs(debit)
+    return build(col(r, 'Transaction Date'), col(r, 'Description'), amount, 'capital_one_card_csv', col(r, 'Category'))
   })
 }
 
@@ -250,7 +287,8 @@ const PARSERS: Record<string, (rows: Row[], headers: string[]) => ParsedTransact
   bofa:         (r) => parseBofa(r),
   bofa_checking:(r) => parseBofaChecking(r),
   amex:         (r) => parseAmex(r),
-  citi:         (r) => parseCiti(r),
+  citi:              (r) => parseCiti(r),
+  capital_one_card:  (r) => parseCapitalOneCard(r),
   wells_fargo:  (r) => parseWellsFargo(r),
   capital_one:  (r) => parseCapitalOne(r),
   apple_card:   (r) => parseAppleCard(r),

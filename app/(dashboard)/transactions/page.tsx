@@ -26,8 +26,9 @@ const SOURCE_LABELS: Record<string, string> = {
   citi_csv:         'Citi',
   wells_fargo_csv:  'Wells Fargo',
   capital_one_csv:  'Capital One',
-  apple_card_csv:   'Apple Card',
-  venmo_csv:        'Venmo',
+  apple_card_csv:        'Apple Card',
+  capital_one_card_csv:  'Capital One',
+  venmo_csv:             'Venmo',
   cashapp_csv:      'Cash App',
   discover_csv:     'Discover',
   generic_csv:      'Other',
@@ -82,6 +83,8 @@ export default function TransactionsPage() {
   const [source, setSource] = useState('')
   const [sourceOpen, setSourceOpen] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [categoryDraft, setCategoryDraft] = useState('')
   const [showImports, setShowImports] = useState(false)
   const [imports, setImports] = useState<CsvImport[]>([])
   const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
@@ -113,6 +116,12 @@ export default function TransactionsPage() {
       .select('*')
       .order('created_at', { ascending: false })
     setImports(data ?? [])
+  }
+
+  async function handleSaveCategory(id: string, category: string) {
+    await supabase.from('transactions').update({ category }).eq('id', id)
+    setTransactions(prev => prev.map(t => t.id === id ? { ...t, category } : t))
+    setEditingCategory(null)
   }
 
   async function handleDeleteRow(id: string) {
@@ -336,7 +345,43 @@ export default function TransactionsPage() {
                 {/* Name + category */}
                 <div style={{ minWidth: 0 }}>
                   <p style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: 'var(--color-text-1)', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</p>
-                  <p style={{ fontSize: 11, color: 'var(--color-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? t.date : t.category}</p>
+                  {isMobile ? (
+                    <p style={{ fontSize: 11, color: 'var(--color-text-3)' }}>{t.date}</p>
+                  ) : editingCategory === t.id ? (
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      <input
+                        autoFocus
+                        value={categoryDraft}
+                        onChange={e => setCategoryDraft(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === 'Enter') handleSaveCategory(t.id, categoryDraft)
+                          if (e.key === 'Escape') setEditingCategory(null)
+                        }}
+                        style={{
+                          fontSize: 11, padding: '2px 8px', borderRadius: 6, width: 130,
+                          border: '1.5px solid var(--color-primary)', outline: 'none',
+                          fontFamily: 'var(--font-body)', color: 'var(--color-text-1)',
+                          background: 'var(--color-card)',
+                        }}
+                      />
+                      <button onClick={() => handleSaveCategory(t.id, categoryDraft)} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: 'var(--color-primary)', color: '#fff', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>✓</button>
+                      <button onClick={() => setEditingCategory(null)} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: 'none', border: '1px solid var(--color-border-solid)', cursor: 'pointer', color: 'var(--color-text-3)', fontFamily: 'var(--font-body)' }}>✕</button>
+                    </div>
+                  ) : (
+                    <p
+                      onClick={() => { setEditingCategory(t.id); setCategoryDraft(t.category) }}
+                      title="Click to edit category"
+                      style={{
+                        fontSize: 11, color: 'var(--color-text-3)', cursor: 'text',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        borderBottom: '1px dashed transparent',
+                      }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = 'var(--color-text-3)' }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderBottomColor = 'transparent' }}
+                    >
+                      {t.category || 'Add category'}
+                    </p>
+                  )}
                 </div>
 
                 {/* Amount */}
