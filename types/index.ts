@@ -17,6 +17,7 @@ export interface Transaction {
   amount: number          // positive = income, negative = expense
   date: string
   type: 'income' | 'expense'
+  source?: string
   created_at: string
 }
 

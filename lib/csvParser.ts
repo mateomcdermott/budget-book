@@ -276,7 +276,7 @@ export function parseCSVText(text: string): ParseResult {
   }
   const clean = lines.slice(headerIdx).join('\n')
 
-  const parsed = Papa.parse<Row>(clean, { header: true, skipEmptyLines: true, trimHeaders: true })
+  const parsed = Papa.parse<Row>(clean, { header: true, skipEmptyLines: true })
   if (parsed.errors.length) errors.push(...parsed.errors.map(e => e.message))
 
   const rows    = parsed.data as Row[]

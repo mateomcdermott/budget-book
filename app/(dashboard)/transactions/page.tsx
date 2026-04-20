@@ -76,7 +76,7 @@ export default function TransactionsPage() {
 
   const availableSources = useMemo(() => {
     const seen = new Set<string>()
-    transactions.forEach(t => { if ((t as any).source) seen.add((t as any).source) })
+    transactions.forEach(t => { if (t.source) seen.add(t.source) })
     return [...seen].sort()
   }, [transactions])
 
@@ -97,7 +97,7 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     return transactions.filter(t => {
       const matchTab    = tab === 'all' || t.type === tab
-      const matchSource = !source || (t as any).source === source
+      const matchSource = !source || t.source === source
       const q           = search.toLowerCase()
       const matchSearch = !q || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q)
       return matchTab && matchSource && matchSearch
