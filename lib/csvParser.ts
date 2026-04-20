@@ -337,7 +337,13 @@ export function parseCSVText(text: string): ParseResult {
   const unique = transactions.map(t => {
     const n = hashCount.get(t.raw_hash) ?? 0
     hashCount.set(t.raw_hash, n + 1)
-    return n === 0 ? t : { ...t, raw_hash: `${t.raw_hash}_${n}` }
+    if (n === 0) return t
+    return {
+      ...t,
+      raw_hash: `${t.raw_hash}_${n}`,
+      duplicate_status: 'possible_duplicate' as const,
+      duplicate_confidence: 0.65,
+    }
   })
 
   return { source, transactions: unique, errors }
