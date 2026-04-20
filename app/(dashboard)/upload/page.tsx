@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Upload, X, CheckCircle, FileText, ArrowRight } from 'lucide-react'
+import { Upload, X, CheckCircle, FileText, ArrowRight, Lock, ShieldCheck, EyeOff, Ban } from 'lucide-react'
 
 // ── CSV parser (no external dep needed) ──────────────────────────────────────
 function parseLine(line: string): string[] {
@@ -203,6 +203,38 @@ export default function UploadPage() {
         }}>
           CSV export or PDF statement — we&apos;ll figure the rest out
         </p>
+      </div>
+
+      {/* Security trust row */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 24,
+        padding: '28px 4px', justifyContent: 'space-between',
+      }}>
+        {[
+          { Icon: Lock,        label: 'Encrypted',         detail: 'TLS in transit · AES-256 at rest' },
+          { Icon: ShieldCheck, label: 'SOC 2 Compliant',   detail: 'Supabase is SOC 2 Type II certified' },
+          { Icon: EyeOff,      label: 'Private by Design', detail: 'Row Level Security isolates your account' },
+          { Icon: Ban,         label: 'Never Shared',      detail: 'Your data is never sold or shared' },
+        ].map(({ Icon, label, detail }) => (
+          <div key={label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: '1 1 180px' }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: 'var(--color-primary-light)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--color-primary)',
+            }}>
+              <Icon size={16} />
+            </div>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-1)', fontFamily: 'var(--font-body)', marginBottom: 2 }}>
+                {label}
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', lineHeight: 1.4 }}>
+                {detail}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Bank marquee */}
