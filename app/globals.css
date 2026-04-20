@@ -242,3 +242,26 @@ body {
 @media (max-width: 520px) {
   .auth-card-pad { padding: 36px 24px 28px !important; }
 }
+
+/* ─────────────────────────────────────────────────────
+   Mobile dashboard layout
+───────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  /* Prevent any page content from overflowing horizontally */
+  main { overflow-x: hidden !important; }
+
+  /* Stack 2-col and 4-col grids to single column */
+  .mobile-stack {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce dashboard page padding on mobile */
+  .dash-page {
+    padding: 16px !important;
+  }
+
+  /* Shrink large serif numbers on mobile */
+  .kpi-value {
+    font-size: 20px !important;
+  }
+}
