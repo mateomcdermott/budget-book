@@ -5,9 +5,28 @@ import { createClient } from '@/lib/supabase/client'
 import type { Transaction } from '@/types'
 import {
   UtensilsCrossed, Car, ShoppingBag, Heart, Tv, Zap,
-  Home, Plane, BookOpen, CreditCard, Tag, Search, Download,
+  Home, Plane, BookOpen, CreditCard, Tag, Search, Download, ChevronDown,
 } from 'lucide-react'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+
+const SOURCE_LABELS: Record<string, string> = {
+  chase_csv:        'Chase',
+  bofa_csv:         'Bank of America',
+  bofa_checking_csv:'BofA Checking',
+  amex_csv:         'Amex',
+  citi_csv:         'Citi',
+  wells_fargo_csv:  'Wells Fargo',
+  capital_one_csv:  'Capital One',
+  apple_card_csv:   'Apple Card',
+  venmo_csv:        'Venmo',
+  cashapp_csv:      'Cash App',
+  discover_csv:     'Discover',
+  generic_csv:      'Other',
+}
+
+function sourceLabel(s: string) {
+  return SOURCE_LABELS[s] || s || 'Unknown'
+}
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
@@ -51,7 +70,15 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'all' | 'income' | 'expense'>('all')
   const [search, setSearch] = useState('')
+  const [source, setSource] = useState('')
+  const [sourceOpen, setSourceOpen] = useState(false)
   const isMobile = useIsMobile()
+
+  const availableSources = useMemo(() => {
+    const seen = new Set<string>()
+    transactions.forEach(t => { if ((t as any).source) seen.add((t as any).source) })
+    return [...seen].sort()
+  }, [transactions])
 
   useEffect(() => {
     async function load() {
@@ -69,12 +96,13 @@ export default function TransactionsPage() {
 
   const filtered = useMemo(() => {
     return transactions.filter(t => {
-      const matchTab = tab === 'all' || t.type === tab
-      const q = search.toLowerCase()
+      const matchTab    = tab === 'all' || t.type === tab
+      const matchSource = !source || (t as any).source === source
+      const q           = search.toLowerCase()
       const matchSearch = !q || t.name.toLowerCase().includes(q) || t.category.toLowerCase().includes(q)
-      return matchTab && matchSearch
+      return matchTab && matchSource && matchSearch
     })
-  }, [transactions, tab, search])
+  }, [transactions, tab, search, source])
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '7px 18px', borderRadius: 10, border: 'none', cursor: 'pointer',
@@ -97,6 +125,63 @@ export default function TransactionsPage() {
               <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>{t}</button>
             ))}
           </div>
+          {/* Source filter */}
+          {availableSources.length > 0 && (
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setSourceOpen(o => !o)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  height: 40, padding: '0 14px', borderRadius: 12,
+                  border: `1.5px solid ${source ? 'var(--color-primary)' : 'var(--color-border-solid)'}`,
+                  background: source ? 'var(--color-primary-light)' : 'var(--color-card)',
+                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+                  color: source ? 'var(--color-primary)' : 'var(--color-text-2)',
+                  cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                {source ? sourceLabel(source) : 'All Sources'}
+                <ChevronDown size={13} />
+              </button>
+              {sourceOpen && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 50,
+                  background: 'var(--color-card)', border: '1.5px solid var(--color-border-solid)',
+                  borderRadius: 12, boxShadow: 'var(--shadow-lg)', padding: '6px 0', minWidth: 180,
+                }}>
+                  <button
+                    onClick={() => { setSource(''); setSourceOpen(false) }}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left',
+                      padding: '8px 14px', fontSize: 13, fontWeight: source === '' ? 700 : 400,
+                      color: source === '' ? 'var(--color-primary)' : 'var(--color-text-1)',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontFamily: 'var(--font-body)',
+                      borderBottom: '1px solid var(--color-border-solid)',
+                    }}
+                  >
+                    All Sources
+                  </button>
+                  {availableSources.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => { setSource(s); setSourceOpen(false) }}
+                      style={{
+                        display: 'block', width: '100%', textAlign: 'left',
+                        padding: '8px 14px', fontSize: 13, fontWeight: source === s ? 700 : 400,
+                        color: source === s ? 'var(--color-primary)' : 'var(--color-text-1)',
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontFamily: 'var(--font-body)',
+                      }}
+                    >
+                      {sourceLabel(s)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Export */}
           <button
             onClick={() => exportCSV(filtered)}
