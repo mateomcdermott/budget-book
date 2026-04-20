@@ -34,12 +34,20 @@ const btnGhost: React.CSSProperties = {
 
 type Stage = 'idle' | 'parsing' | 'preview' | 'success'
 
-type AnnotatedTx = ParsedTransaction & { _action: 'insert' | 'skip' | 'replace' }
+type AnnotatedTx = ParsedTransaction & { _action: 'insert' | 'skip' | 'replace'; _isPayment?: boolean }
 
 function dupeColor(status?: string) {
   if (status === 'likely_duplicate') return { bg: 'var(--color-expense-light)', color: 'var(--color-expense)', label: 'Likely duplicate' }
   if (status === 'possible_duplicate') return { bg: '#FEF3C7', color: '#92400E', label: 'Possible duplicate' }
   return null
+}
+
+const PAYMENT_KEYWORDS = /payment|mobile pymt|autopay|online pymt|pymt thank|credit card pymt|card payment|mastercard.*offer|transit.*offer/i
+
+function isPayment(tx: ParsedTransaction): boolean {
+  const cat = tx.category.toLowerCase()
+  if (cat.includes('payment') || cat === 'payment/credit') return true
+  return PAYMENT_KEYWORDS.test(tx.name)
 }
 
 export default function UploadPage() {
@@ -81,10 +89,14 @@ export default function UploadPage() {
     setSource(data.source)
     setErrors(data.errors ?? [])
     setTransactions(
-      (data.transactions as ParsedTransaction[]).map(t => ({
-        ...t,
-        _action: t.duplicate_status === 'likely_duplicate' ? 'skip' : 'insert',
-      }))
+      (data.transactions as ParsedTransaction[]).map(t => {
+        const payment = isPayment(t)
+        return {
+          ...t,
+          _isPayment: payment,
+          _action: (payment || t.duplicate_status === 'likely_duplicate') ? 'skip' : 'insert',
+        }
+      })
     )
     setStage('preview')
   }
@@ -250,9 +262,10 @@ export default function UploadPage() {
     const active  = transactions.filter(t => t._action !== 'skip')
     const toImport = active.length
     const flaggedIdxs = transactions
-      .map((t, i) => t.duplicate_status !== 'unique' ? i : -1)
+      .map((t, i) => (t.duplicate_status !== 'unique' || t._isPayment) ? i : -1)
       .filter(i => i !== -1)
-    const dupes = flaggedIdxs.length
+    const dupes    = transactions.filter(t => t.duplicate_status !== 'unique').length
+    const payments = transactions.filter(t => t._isPayment).length
     const totalExpenses = active.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
     const totalIncome   = active.filter(t => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
     const net = totalIncome - totalExpenses
@@ -288,7 +301,7 @@ export default function UploadPage() {
                 }}
               >
                 <AlertCircle size={14} />
-                {dupes} to review
+                {flaggedIdxs.length} to review
               </button>
             )}
             <button onClick={reset} style={btnGhost}><X size={13} /> Cancel</button>
@@ -317,11 +330,23 @@ export default function UploadPage() {
           ))}
         </div>
 
-        {/* Dupe alert */}
+        {/* Alerts */}
+        {payments > 0 && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            padding: '14px 18px', borderRadius: 16, marginBottom: 10,
+            background: 'var(--color-primary-light)', border: '1px solid rgba(59,125,216,0.2)',
+          }}>
+            <AlertCircle size={16} style={{ color: 'var(--color-primary)', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 13, color: 'var(--color-primary)', fontFamily: 'var(--font-body)' }}>
+              {payments} credit card payment{payments !== 1 ? 's were' : ' was'} detected and set to <strong>Skip</strong> — these are transfers, not income. Import them if you want a record.
+            </p>
+          </div>
+        )}
         {dupes > 0 && (
           <div style={{
             display: 'flex', alignItems: 'flex-start', gap: 12,
-            padding: '14px 18px', borderRadius: 16, marginBottom: 16,
+            padding: '14px 18px', borderRadius: 16, marginBottom: 10,
             background: '#FEF3C7', border: '1px solid #FDE68A',
           }}>
             <AlertTriangle size={16} style={{ color: '#92400E', flexShrink: 0, marginTop: 1 }} />
@@ -369,7 +394,11 @@ export default function UploadPage() {
                       {tx.amount >= 0 ? '+' : '−'}{fmt(tx.amount)}
                     </td>
                     <td style={{ padding: '10px 14px' }}>
-                      {dupe ? (
+                      {tx._isPayment ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
+                          Payment
+                        </span>
+                      ) : dupe ? (
                         <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: dupe.bg, color: dupe.color }}>
                           {dupe.label}
                         </span>
