@@ -189,7 +189,7 @@ export default function UploadPage() {
         <Upload
           size={40}
           strokeWidth={1.5}
-          style={{ color: 'var(--color-text-3)', marginBottom: 20 }}
+          style={{ color: 'var(--color-text-3)', marginBottom: 20, display: 'block', margin: '0 auto 20px' }}
         />
         <p style={{
           fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28,
