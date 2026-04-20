@@ -124,7 +124,7 @@ export default function UploadPage() {
     const res = await fetch('/api/upload/confirm', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transactions: toSend }),
+      body: JSON.stringify({ transactions: toSend, filename: fileName }),
     })
     const data = await res.json()
     setImportedCount((data.inserted ?? 0) + (data.replaced ?? 0))

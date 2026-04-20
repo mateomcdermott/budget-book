@@ -6,8 +6,17 @@ import type { Transaction } from '@/types'
 import {
   UtensilsCrossed, Car, ShoppingBag, Heart, Tv, Zap,
   Home, Plane, BookOpen, CreditCard, Tag, Search, Download, ChevronDown,
+  Trash2, History, X, AlertTriangle,
 } from 'lucide-react'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
+
+interface CsvImport {
+  id: string
+  filename: string
+  row_count: number
+  status: string
+  created_at: string
+}
 
 const SOURCE_LABELS: Record<string, string> = {
   chase_csv:        'Chase',
@@ -72,6 +81,10 @@ export default function TransactionsPage() {
   const [search, setSearch] = useState('')
   const [source, setSource] = useState('')
   const [sourceOpen, setSourceOpen] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [showImports, setShowImports] = useState(false)
+  const [imports, setImports] = useState<CsvImport[]>([])
+  const [deletingBatchId, setDeletingBatchId] = useState<string | null>(null)
   const isMobile = useIsMobile()
 
   const availableSources = useMemo(() => {
@@ -93,6 +106,28 @@ export default function TransactionsPage() {
     load()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  async function loadImports() {
+    const { data } = await supabase
+      .from('csv_imports')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setImports(data ?? [])
+  }
+
+  async function handleDeleteRow(id: string) {
+    await supabase.from('transactions').delete().eq('id', id)
+    setTransactions(prev => prev.filter(t => t.id !== id))
+    setDeletingId(null)
+  }
+
+  async function handleDeleteBatch(batchId: string) {
+    await supabase.from('transactions').delete().eq('import_batch_id', batchId)
+    await supabase.from('csv_imports').delete().eq('id', batchId)
+    setImports(prev => prev.filter(i => i.id !== batchId))
+    setTransactions(prev => prev.filter(t => (t as Transaction & { import_batch_id?: string }).import_batch_id !== batchId))
+    setDeletingBatchId(null)
+  }
 
   const filtered = useMemo(() => {
     return transactions.filter(t => {
@@ -197,6 +232,22 @@ export default function TransactionsPage() {
             <Download size={13} />
             {!isMobile && 'Export CSV'}
           </button>
+
+          {/* Import History */}
+          <button
+            onClick={() => { loadImports(); setShowImports(true) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              height: 40, padding: '0 16px', borderRadius: 12,
+              border: '1.5px solid var(--color-border-solid)',
+              background: 'var(--color-card)', fontSize: 13, fontWeight: 600,
+              color: 'var(--color-text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap', flexShrink: 0,
+            }}
+          >
+            <History size={13} />
+            {!isMobile && 'Imports'}
+          </button>
         </div>
         {/* Search — full width row */}
         <div style={{ position: 'relative' }}>
@@ -228,14 +279,14 @@ export default function TransactionsPage() {
         {/* Table header */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: isMobile ? '36px 1fr 90px' : '44px 1fr 120px 120px 100px',
+          gridTemplateColumns: isMobile ? '36px 1fr 90px 32px' : '44px 1fr 120px 120px 100px 40px',
           padding: '12px 16px',
           borderBottom: '1px solid var(--color-border-solid)',
           background: 'var(--color-bg)',
-          minWidth: isMobile ? 0 : 560,
+          minWidth: isMobile ? 0 : 600,
         }}>
-          {(isMobile ? ['', 'Name', 'Amount'] : ['', 'Name', 'Amount', 'Date', 'Type']).map(h => (
-            <span key={h} style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          {(isMobile ? ['', 'Name', 'Amount', ''] : ['', 'Name', 'Amount', 'Date', 'Type', '']).map((h, i) => (
+            <span key={i} style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {h}
             </span>
           ))}
@@ -257,18 +308,20 @@ export default function TransactionsPage() {
           filtered.map((t, i) => {
             const Icon = getCategoryIcon(t.category)
             const isIncome = t.type === 'income'
+            const isConfirming = deletingId === t.id
             return (
               <div
                 key={t.id}
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: isMobile ? '36px 1fr 90px' : '44px 1fr 120px 120px 100px',
+                  gridTemplateColumns: isMobile ? '36px 1fr 90px 32px' : '44px 1fr 120px 120px 100px 40px',
                   alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px',
                   borderBottom: i < filtered.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
                   transition: 'background 0.1s',
+                  background: isConfirming ? 'var(--color-expense-light)' : 'transparent',
                 }}
-                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = 'var(--color-bg)'}
-                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = 'transparent'}
+                onMouseEnter={e => { if (!isConfirming) (e.currentTarget as HTMLDivElement).style.background = 'var(--color-bg)' }}
+                onMouseLeave={e => { if (!isConfirming) (e.currentTarget as HTMLDivElement).style.background = 'transparent' }}
               >
                 {/* Icon */}
                 <div style={{
@@ -306,6 +359,24 @@ export default function TransactionsPage() {
                     {t.type}
                   </span>
                 )}
+
+                {/* Delete */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {isConfirming ? (
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button onClick={() => handleDeleteRow(t.id)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 6, border: 'none', background: 'var(--color-expense)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Yes</button>
+                      <button onClick={() => setDeletingId(null)} style={{ fontSize: 10, fontWeight: 700, padding: '3px 7px', borderRadius: 6, border: '1px solid var(--color-border-solid)', background: 'var(--color-card)', color: 'var(--color-text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>No</button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setDeletingId(t.id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-3)', padding: 4, display: 'flex', alignItems: 'center', borderRadius: 6 }}
+                      title="Delete transaction"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  )}
+                </div>
               </div>
             )
           })
@@ -323,6 +394,81 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Import History Modal */}
+      {showImports && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 100,
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 24,
+        }} onClick={() => { setShowImports(false); setDeletingBatchId(null) }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--color-card)', borderRadius: 'var(--radius-card)',
+              boxShadow: 'var(--shadow-lg)', width: '100%', maxWidth: 560,
+              maxHeight: '80vh', display: 'flex', flexDirection: 'column',
+            }}
+          >
+            {/* Modal header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid var(--color-border-solid)' }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--color-text-1)' }}>Import History</p>
+              <button onClick={() => { setShowImports(false); setDeletingBatchId(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-3)' }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {imports.length === 0 ? (
+                <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--color-text-3)', fontSize: 14 }}>
+                  No imports found. Upload a CSV to get started.
+                </div>
+              ) : (
+                imports.map(imp => {
+                  const isConfirming = deletingBatchId === imp.id
+                  return (
+                    <div key={imp.id} style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '16px 24px', borderBottom: '1px solid var(--color-border-solid)',
+                      background: isConfirming ? 'var(--color-expense-light)' : 'transparent',
+                    }}>
+                      <div>
+                        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-1)', marginBottom: 2 }}>{imp.filename}</p>
+                        <p style={{ fontSize: 12, color: 'var(--color-text-3)' }}>
+                          {imp.row_count} transactions · {new Date(imp.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+
+                      {isConfirming ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <AlertTriangle size={14} style={{ color: 'var(--color-expense)' }} />
+                          <span style={{ fontSize: 12, color: 'var(--color-expense)', fontWeight: 600 }}>Delete all?</span>
+                          <button onClick={() => handleDeleteBatch(imp.id)} style={{ fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8, border: 'none', background: 'var(--color-expense)', color: '#fff', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Yes, delete</button>
+                          <button onClick={() => setDeletingBatchId(null)} style={{ fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 8, border: '1px solid var(--color-border-solid)', background: 'var(--color-card)', color: 'var(--color-text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)' }}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setDeletingBatchId(imp.id)}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 6,
+                            padding: '7px 14px', borderRadius: 8, cursor: 'pointer',
+                            border: '1px solid var(--color-border-solid)',
+                            background: 'none', fontSize: 12, fontWeight: 600,
+                            color: 'var(--color-expense)', fontFamily: 'var(--font-body)',
+                          }}
+                        >
+                          <Trash2 size={12} /> Delete import
+                        </button>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -7,7 +7,10 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { transactions } = await req.json() as { transactions: (ParsedTransaction & { _action?: string })[] }
+  const { transactions, filename } = await req.json() as {
+    transactions: (ParsedTransaction & { _action?: string })[]
+    filename?: string
+  }
   if (!Array.isArray(transactions) || transactions.length === 0) {
     return NextResponse.json({ error: 'No transactions provided' }, { status: 400 })
   }
@@ -31,11 +34,28 @@ export async function POST(req: NextRequest) {
     else toInsert.push(clean)
   }
 
+  // Create an import batch record so transactions can be deleted by batch later
+  let batchId: string | null = null
+  if (toInsert.length > 0) {
+    const { data: batch } = await supabase
+      .from('csv_imports')
+      .insert({
+        user_id: user.id,
+        filename: filename ?? 'upload',
+        row_count: toInsert.length,
+        status: 'completed',
+      })
+      .select('id')
+      .single()
+    batchId = batch?.id ?? null
+  }
+
   let inserted = 0
   let replaced = 0
 
   if (toInsert.length > 0) {
-    const { data } = await supabase.from('transactions').insert(toInsert).select('id')
+    const rows = toInsert.map(tx => ({ ...tx, import_batch_id: batchId }))
+    const { data } = await supabase.from('transactions').insert(rows).select('id')
     inserted = data?.length ?? 0
   }
 
@@ -47,5 +67,5 @@ export async function POST(req: NextRequest) {
     replaced += data?.length ?? 0
   }
 
-  return NextResponse.json({ inserted, replaced })
+  return NextResponse.json({ inserted, replaced, batch_id: batchId })
 }
