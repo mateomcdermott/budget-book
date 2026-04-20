@@ -35,8 +35,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
+  const PROTECTED = ['/overview', '/balances', '/transactions', '/bills', '/expenses', '/goals', '/budget', '/upload']
+
   // Redirect unauthenticated users away from protected routes
-  if (!user && pathname.startsWith('/dashboard')) {
+  if (!user && PROTECTED.some(r => pathname === r || pathname.startsWith(r + '/'))) {
     const loginUrl = request.nextUrl.clone()
     loginUrl.pathname = '/login'
     return NextResponse.redirect(loginUrl)
@@ -44,9 +46,9 @@ export async function middleware(request: NextRequest) {
 
   // Redirect authenticated users away from auth pages
   if (user && (pathname === '/login' || pathname === '/signup')) {
-    const dashboardUrl = request.nextUrl.clone()
-    dashboardUrl.pathname = '/dashboard'
-    return NextResponse.redirect(dashboardUrl)
+    const overviewUrl = request.nextUrl.clone()
+    overviewUrl.pathname = '/overview'
+    return NextResponse.redirect(overviewUrl)
   }
 
   return supabaseResponse

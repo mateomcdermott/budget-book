@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Budget Book — Auth</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ───────── CSS VARIABLES ───────── */
+  :root {
+    --bg:            #F8F7F5;
+    --card:          #FFFFFF;
+    --primary:       #3B7DD8;
+    --primary-hover: #2C6BC4;
+    --primary-light: rgba(59,125,216,0.08);
+    --income:        #4CAF82;
+    --expense:       #E07060;
+    --text-1:        #1A1A2E;
+    --text-2:        #6B7280;
+    --text-3:        #9CA3AF;
+    --border:        rgba(0,0,0,0.06);
+    --shadow-card:   0 2px 12px rgba(0,0,0,0.06);
+    --shadow-lg:     0 8px 32px rgba(0,0,0,0.10);
+    --shadow-btn:    0 2px 8px rgba(59,125,216,0.25);
+    --radius-card:   24px;
+    --radius-input:  14px;
+    --radius-pill:   999px;
+    --font-display:  'Fraunces', Georgia, serif;
+    --font-body:     'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  /* ───────── RESET ───────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ───────── DECORATIVE BACKGROUND ───────── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    right: -15%;
+    width: 700px;
+    height: 700px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59,125,216,0.07) 0%, rgba(59,125,216,0.02) 50%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -25%;
+    left: -10%;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(76,175,130,0.06) 0%, rgba(76,175,130,0.02) 50%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Extra floating orb */
+  .orb {
+    position: fixed;
+    width: 340px;
+    height: 340px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(224,112,96,0.05) 0%, transparent 70%);
+    top: 55%;
+    right: 8%;
+    pointer-events: none;
+    z-index: 0;
+    animation: orbFloat 14s ease-in-out infinite alternate;
+  }
+  @keyframes orbFloat {
+    0%   { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-30px, -40px) scale(1.08); }
+  }
+
+  /* ───────── AUTH WRAPPER ───────── */
+  .auth-wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    padding: 24px;
+  }
+
+  /* ───────── AUTH CARD ───────── */
+  .auth-card {
+    background: var(--card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-lg);
+    padding: 48px 40px 40px;
+    position: relative;
+    overflow: hidden;
+    animation: cardEntry 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes cardEntry {
+    0%   { opacity: 0; transform: translateY(18px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* Card top accent line */
+  .auth-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--income));
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  /* ───────── LOGO ───────── */
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+    animation: fadeStagger 0.5s 0.1s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .logo-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(59,125,216,0.22);
+  }
+  .logo-text {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-1);
+    letter-spacing: -0.02em;
+  }
+
+  /* ───────── HEADINGS ───────── */
+  .auth-heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 26px;
+    line-height: 1.25;
+    color: var(--text-1);
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+    animation: fadeStagger 0.5s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .auth-subtitle {
+    font-size: 14.5px;
+    color: var(--text-2);
+    margin-bottom: 28px;
+    line-height: 1.5;
+    animation: fadeStagger 0.5s 0.2s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .auth-subtitle .email-highlight {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  @keyframes fadeStagger {
+    0%   { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ───────── FORM ───────── */
+  .form-group {
+    margin-bottom: 18px;
+    animation: fadeStagger 0.5s calc(0.2s + var(--i, 0) * 0.06s) cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-2);
+    margin-bottom: 7px;
+    letter-spacing: 0.01em;
+  }
+  .form-input {
+    width: 100%;
+    height: 48px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-input);
+    padding: 0 16px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--text-1);
+    background: var(--bg);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  }
+  .form-input::placeholder { color: var(--text-3); }
+  .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,125,216,0.12);
+    background: #fff;
+  }
+  .form-input.error {
+    border-color: var(--expense);
+    box-shadow: 0 0 0 3px rgba(224,112,96,0.10);
+  }
+  .form-error {
+    font-size: 12.5px;
+    color: var(--expense);
+    margin-top: 6px;
+    display: none;
+    line-height: 1.4;
+  }
+  .form-error.visible { display: block; }
+
+  /* ───────── PASSWORD WRAPPER ───────── */
+  .password-wrapper {
+    position: relative;
+  }
+  .password-wrapper .form-input {
+    padding-right: 46px;
+  }
+  .password-toggle {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-3);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+  }
+  .password-toggle:hover { color: var(--text-2); }
+
+  /* ───────── BUTTONS ───────── */
+  .btn-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 50px;
+    border: none;
+    border-radius: var(--radius-pill);
+    background: var(--primary);
+    color: #fff;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 15.5px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(59,125,216,0.18);
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-btn);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 4px rgba(59,125,216,0.15);
+  }
+  .btn-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+  .btn-primary .arrow { font-size: 18px; transition: transform 0.2s; }
+  .btn-primary:hover .arrow { transform: translateX(3px); }
+
+  /* Loading spinner inside button */
+  .btn-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid rgba(255,255,255,0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: none;
+  }
+  .btn-primary.loading .btn-label { visibility: hidden; }
+  .btn-primary.loading .btn-spinner { display: block; position: absolute; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ───────── FOOTER LINKS ───────── */
+  .auth-footer {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 14px;
+    color: var(--text-2);
+    animation: fadeStagger 0.5s 0.45s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .auth-footer a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .auth-footer a:hover { color: var(--primary-hover); text-decoration: underline; }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13.5px;
+    color: var(--text-3);
+    text-decoration: none;
+    margin-top: 16px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--text-2); }
+
+  /* ───────── OTP BOXES ───────── */
+  .otp-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+    animation: fadeStagger 0.5s 0.25s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .otp-box {
+    width: 54px;
+    height: 62px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    text-align: center;
+    font-family: var(--font-body);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-1);
+    background: var(--bg);
+    outline: none;
+    caret-color: var(--primary);
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.15s;
+  }
+  .otp-box:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59,125,216,0.12);
+    background: #fff;
+    transform: scale(1.04);
+  }
+  .otp-box.filled {
+    border-color: var(--primary);
+    background: var(--primary-light);
+  }
+  .otp-box.error-state {
+    border-color: var(--expense);
+    box-shadow: 0 0 0 3px rgba(224,112,96,0.10);
+    animation: shake 0.4s ease-in-out;
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20%      { transform: translateX(-4px); }
+    40%      { transform: translateX(4px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(3px); }
+  }
+
+  .resend-row {
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--text-3);
+    margin-bottom: 4px;
+  }
+  .resend-row a {
+    color: var(--primary);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .resend-row a:hover { text-decoration: underline; }
+  .resend-row .cooldown { color: var(--text-3); font-weight: 500; }
+
+  /* ───────── SUCCESS CHECKMARK ───────── */
+  .success-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(76,175,130,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+  }
+  .success-icon svg {
+    width: 28px;
+    height: 28px;
+    color: var(--income);
+  }
+
+  /* ───────── PRIVACY BADGE ───────── */
+  .privacy-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-3);
+    margin-top: 20px;
+    animation: fadeStagger 0.5s 0.5s cubic-bezier(0.22,1,0.36,1) both;
+  }
+  .privacy-badge svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* ───────── VIEW TRANSITIONS ───────── */
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ───────── COMPONENT LIBRARY (bottom) ───────── */
+  .component-lib {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 800px;
+    margin: 48px auto 0;
+    padding: 0 24px 48px;
+  }
+  .lib-heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-1);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+  }
+  .lib-section {
+    margin-bottom: 32px;
+  }
+  .lib-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 14px;
+  }
+  .lib-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .lib-card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ───────── RESPONSIVE ───────── */
+  @media (max-width: 520px) {
+    .auth-card { padding: 36px 24px 28px; }
+    .auth-heading { font-size: 22px; }
+    .otp-box { width: 46px; height: 54px; font-size: 20px; }
+    .otp-row { gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  AUTH WRAPPER                          -->
+<!-- ═══════════════════════════════════════ -->
+<div class="auth-wrapper">
+
+  <!-- ────── LOGIN VIEW ────── -->
+  <div class="view active" id="view-login">
+    <div class="auth-card">
+      <div class="logo-row">
+        <div class="logo-mark">B</div>
+        <div class="logo-text">Budget Book</div>
+      </div>
+      <h1 class="auth-heading">Welcome back</h1>
+      <p class="auth-subtitle">Sign in to pick up where you left off.</p>
+
+      <form id="login-form" autocomplete="off" novalidate>
+        <div class="form-group" style="--i:1">
+          <label class="form-label" for="login-email">Email</label>
+          <input class="form-input" id="login-email" type="email" placeholder="you@example.com" autocomplete="email">
+          <div class="form-error" id="login-email-err">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group" style="--i:2">
+          <label class="form-label" for="login-password">Password</label>
+          <div class="password-wrapper">
+            <input class="form-input" id="login-password" type="password" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePw(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="form-error" id="login-pass-err">Password must be at least 8 characters.</div>
+        </div>
+        <button type="submit" class="btn-primary" id="login-btn">
+          <span class="btn-label">Continue <span class="arrow">→</span></span>
+          <span class="btn-spinner"></span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        No account? <a href="#" onclick="showView('signup'); return false;">Sign up free</a>
+      </div>
+      <div class="privacy-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span>256-bit encrypted &middot; Your data stays private</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── SIGNUP VIEW ────── -->
+  <div class="view" id="view-signup">
+    <div class="auth-card">
+      <div class="logo-row">
+        <div class="logo-mark">B</div>
+        <div class="logo-text">Budget Book</div>
+      </div>
+      <h1 class="auth-heading">Create your account</h1>
+      <p class="auth-subtitle">Free forever. Your data stays private.</p>
+
+      <form id="signup-form" autocomplete="off" novalidate>
+        <div class="form-group" style="--i:1">
+          <label class="form-label" for="signup-email">Email</label>
+          <input class="form-input" id="signup-email" type="email" placeholder="you@example.com" autocomplete="email">
+          <div class="form-error" id="signup-email-err">Please enter a valid email address.</div>
+        </div>
+        <div class="form-group" style="--i:2">
+          <label class="form-label" for="signup-password">Password</label>
+          <div class="password-wrapper">
+            <input class="form-input" id="signup-password" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+            <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePw(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="form-error" id="signup-pass-err">Password must be at least 8 characters.</div>
+        </div>
+        <div class="form-group" style="--i:3">
+          <label class="form-label" for="signup-confirm">Confirm password</label>
+          <div class="password-wrapper">
+            <input class="form-input" id="signup-confirm" type="password" placeholder="Repeat your password" autocomplete="new-password">
+            <button type="button" class="password-toggle" aria-label="Show password" onclick="togglePw(this)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+          <div class="form-error" id="signup-confirm-err">Passwords don't match.</div>
+        </div>
+        <button type="submit" class="btn-primary" id="signup-btn">
+          <span class="btn-label">Get started <span class="arrow">→</span></span>
+          <span class="btn-spinner"></span>
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Already have an account? <a href="#" onclick="showView('login'); return false;">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── OTP VERIFY VIEW ────── -->
+  <div class="view" id="view-otp">
+    <div class="auth-card" style="text-align:center;">
+      <div class="logo-row" style="justify-content:center;">
+        <div class="logo-mark">B</div>
+        <div class="logo-text">Budget Book</div>
+      </div>
+
+      <!-- Email icon -->
+      <div style="margin:0 auto 16px; width:56px; height:56px; border-radius:50%; background:var(--primary-light); display:flex; align-items:center; justify-content:center;">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 4l-10 8L2 4"/></svg>
+      </div>
+
+      <h1 class="auth-heading">Check your email</h1>
+      <p class="auth-subtitle">We sent a 6-digit code to <span class="email-highlight" id="otp-email">you@example.com</span></p>
+
+      <div class="otp-row" id="otp-row">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="0" aria-label="Digit 1">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="1" aria-label="Digit 2">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="2" aria-label="Digit 3">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="3" aria-label="Digit 4">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="4" aria-label="Digit 5">
+        <input class="otp-box" type="text" inputmode="numeric" maxlength="1" data-idx="5" aria-label="Digit 6">
+      </div>
+
+      <div class="form-error" id="otp-err" style="text-align:center; margin-bottom:16px;">Invalid code. Please try again.</div>
+
+      <button type="button" class="btn-primary" id="otp-btn" disabled>
+        <span class="btn-label">Verify <span class="arrow">→</span></span>
+        <span class="btn-spinner"></span>
+      </button>
+
+      <div class="resend-row" style="margin-top:20px;">
+        <span id="resend-text">Didn't get a code? <a onclick="resendCode()" id="resend-link">Resend</a></span>
+      </div>
+
+      <a href="#" class="back-link" onclick="showView('login'); return false;" style="display:inline-flex; margin:16px auto 0;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><polyline points="12 19 5 12 12 5"/></svg>
+        Back to sign in
+      </a>
+    </div>
+  </div>
+
+  <!-- ────── SUCCESS VIEW ────── -->
+  <div class="view" id="view-success">
+    <div class="auth-card" style="text-align:center;">
+      <div class="logo-row" style="justify-content:center;">
+        <div class="logo-mark">B</div>
+        <div class="logo-text">Budget Book</div>
+      </div>
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h1 class="auth-heading">You're all set!</h1>
+      <p class="auth-subtitle">Your account is verified. Let's start budgeting.</p>
+      <button type="button" class="btn-primary" onclick="showView('login')">
+        <span class="btn-label">Go to Dashboard <span class="arrow">→</span></span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  JAVASCRIPT                            -->
+<!-- ═══════════════════════════════════════ -->
+<script>
+  /* ── View Switching ── */
+  let currentEmail = '';
+  function showView(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    const target = document.getElementById('view-' + name);
+    if (target) {
+      target.classList.add('active');
+      // Re-trigger card animation
+      const card = target.querySelector('.auth-card');
+      if (card) {
+        card.style.animation = 'none';
+        card.offsetHeight; // reflow
+        card.style.animation = '';
+      }
+    }
+    // Focus first input
+    setTimeout(() => {
+      const first = target?.querySelector('input');
+      if (first) first.focus();
+    }, 100);
+  }
+
+  /* ── Password Toggle ── */
+  function togglePw(btn) {
+    const input = btn.parentElement.querySelector('input');
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    btn.innerHTML = isPassword
+      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  }
+
+  /* ── Validation Helpers ── */
+  function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e); }
+  function showErr(id, show) {
+    const el = document.getElementById(id);
+    el.classList.toggle('visible', show);
+    if (show) el.previousElementSibling?.querySelector?.('input')?.classList.add('error');
+  }
+  function clearErrs(prefix) {
+    document.querySelectorAll(`[id^="${prefix}"]`).forEach(el => {
+      el.classList.remove('visible');
+    });
+    document.querySelectorAll(`#view-${prefix.split('-')[0]} .form-input`).forEach(el => el.classList.remove('error'));
+  }
+
+  /* ── Simulate Loading ── */
+  function simulateLoad(btn, ms, cb) {
+    btn.classList.add('loading');
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.classList.remove('loading');
+      btn.disabled = false;
+      cb();
+    }, ms);
+  }
+
+  /* ── Login Form ── */
+  document.getElementById('login-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearErrs('login-');
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
+    let valid = true;
+    if (!isValidEmail(email)) { showErr('login-email-err', true); valid = false; }
+    if (pass.length < 8) { showErr('login-pass-err', true); valid = false; }
+    if (!valid) return;
+    currentEmail = email;
+    const btn = document.getElementById('login-btn');
+    simulateLoad(btn, 1200, () => {
+      document.getElementById('otp-email').textContent = email;
+      showView('otp');
+    });
+  });
+
+  /* ── Signup Form ── */
+  document.getElementById('signup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    clearErrs('signup-');
+    const email = document.getElementById('signup-email').value.trim();
+    const pass = document.getElementById('signup-password').value;
+    const confirm = document.getElementById('signup-confirm').value;
+    let valid = true;
+    if (!isValidEmail(email)) { showErr('signup-email-err', true); valid = false; }
+    if (pass.length < 8) { showErr('signup-pass-err', true); valid = false; }
+    if (pass !== confirm) { showErr('signup-confirm-err', true); valid = false; }
+    if (!valid) return;
+    currentEmail = email;
+    const btn = document.getElementById('signup-btn');
+    simulateLoad(btn, 1400, () => {
+      document.getElementById('otp-email').textContent = email;
+      showView('otp');
+    });
+  });
+
+  /* ── OTP Input Logic ── */
+  const otpBoxes = document.querySelectorAll('.otp-box');
+  otpBoxes.forEach((box, i) => {
+    box.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val.slice(0, 1);
+      if (val && i < 5) otpBoxes[i + 1].focus();
+      updateOtpState();
+    });
+    box.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace' && !e.target.value && i > 0) {
+        otpBoxes[i - 1].focus();
+        otpBoxes[i - 1].value = '';
+        updateOtpState();
+      }
+    });
+    box.addEventListener('paste', (e) => {
+      e.preventDefault();
+      const paste = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6);
+      paste.split('').forEach((ch, j) => {
+        if (otpBoxes[j]) otpBoxes[j].value = ch;
+      });
+      if (paste.length > 0) otpBoxes[Math.min(paste.length, 5)].focus();
+      updateOtpState();
+    });
+  });
+
+  function updateOtpState() {
+    const code = Array.from(otpBoxes).map(b => b.value).join('');
+    otpBoxes.forEach(b => b.classList.toggle('filled', b.value !== ''));
+    document.getElementById('otp-btn').disabled = code.length < 6;
+    document.getElementById('otp-err').classList.remove('visible');
+    otpBoxes.forEach(b => b.classList.remove('error-state'));
+  }
+
+  document.getElementById('otp-btn').addEventListener('click', () => {
+    const code = Array.from(otpBoxes).map(b => b.value).join('');
+    const btn = document.getElementById('otp-btn');
+    simulateLoad(btn, 1400, () => {
+      // Simulate: any 6-digit code works, except "000000"
+      if (code === '000000') {
+        document.getElementById('otp-err').classList.add('visible');
+        otpBoxes.forEach(b => b.classList.add('error-state'));
+      } else {
+        showView('success');
+      }
+    });
+  });
+
+  /* ── Resend OTP ── */
+  let cooldown = 0;
+  function resendCode() {
+    if (cooldown > 0) return;
+    cooldown = 30;
+    const link = document.getElementById('resend-link');
+    const tick = setInterval(() => {
+      cooldown--;
+      link.outerHTML = `<span class="cooldown">Resend in ${cooldown}s</span>`;
+      if (cooldown <= 0) {
+        clearInterval(tick);
+        document.getElementById('resend-text').innerHTML = 'Didn\'t get a code? <a onclick="resendCode()" id="resend-link">Resend</a>';
+      }
+    }, 1000);
+    link.outerHTML = `<span class="cooldown">Resend in ${cooldown}s</span>`;
+  }
+</script>
+
+</body>
+</html>
