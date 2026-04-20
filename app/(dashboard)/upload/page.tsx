@@ -162,52 +162,89 @@ export default function UploadPage() {
   }
 
   // ── IDLE ──────────────────────────────────────────────────────────────────
+  const BANKS = [
+    'Chase', 'Bank of America', 'Amex', 'Citi', 'Wells Fargo',
+    'Capital One', 'Apple Card', 'Discover', 'Venmo', 'Cash App',
+    'TD Bank', 'US Bank', 'Ally', 'Fidelity', 'SoFi',
+  ]
+
   if (stage === 'idle') return (
     <div style={{ padding: '24px', maxWidth: 720, margin: '0 auto' }}>
-      <p style={{ fontSize: 14, color: 'var(--color-text-2)', marginBottom: 32 }}>
-        Import transactions from a CSV file exported by your bank.
-      </p>
-
+      {/* Drop zone */}
       <div
         onDragOver={e => { e.preventDefault(); setDragging(true) }}
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
+        onClick={() => fileRef.current?.click()}
         style={{
-          ...cardBase,
-          border: `2px dashed ${dragging ? 'var(--color-primary)' : 'var(--color-border-solid)'}`,
-          background: dragging ? 'var(--color-primary-light)' : 'var(--color-card)',
-          boxShadow: 'none',
-          padding: '64px 40px',
+          borderRadius: 'var(--radius-card)',
+          border: `2px dashed ${dragging ? 'var(--color-primary)' : '#D4D0C8'}`,
+          background: dragging ? 'var(--color-primary-light)' : 'var(--color-bg)',
+          padding: '64px 40px 56px',
           textAlign: 'center',
           transition: 'border-color 0.15s, background 0.15s',
           cursor: 'pointer',
         }}
-        onClick={() => fileRef.current?.click()}
       >
-        <div style={{
-          width: 64, height: 64, borderRadius: 18,
-          background: 'var(--color-primary-light)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          margin: '0 auto 20px',
-          color: 'var(--color-primary)',
-        }}>
-          <Upload size={28} />
-        </div>
+        <Upload
+          size={40}
+          strokeWidth={1.5}
+          style={{ color: 'var(--color-text-3)', marginBottom: 20 }}
+        />
         <p style={{
-          fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20,
-          color: 'var(--color-text-1)', letterSpacing: '-0.01em', marginBottom: 8,
+          fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 28,
+          color: 'var(--color-text-1)', letterSpacing: '-0.02em', marginBottom: 10,
         }}>
-          Drop your CSV here
+          Drop your statement here
         </p>
-        <p style={{ fontSize: 14, color: 'var(--color-text-2)', marginBottom: 24 }}>
-          or click to browse — accepts .csv files exported from any bank
+        <p style={{
+          fontSize: 14, color: 'var(--color-text-2)',
+          fontFamily: 'var(--font-body)',
+        }}>
+          CSV export or PDF statement — we&apos;ll figure the rest out
         </p>
-        <button style={btnPrimary} onClick={e => { e.stopPropagation(); fileRef.current?.click() }}>
-          Browse Files
-        </button>
+      </div>
+
+      {/* Bank marquee */}
+      <div style={{ position: 'relative', overflow: 'hidden', marginTop: 24 }}>
+        {/* Fade masks */}
+        <div style={{
+          position: 'absolute', left: 0, top: 0, bottom: 0, width: 80, zIndex: 1,
+          background: 'linear-gradient(to right, var(--color-bg), transparent)',
+          pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', right: 0, top: 0, bottom: 0, width: 80, zIndex: 1,
+          background: 'linear-gradient(to left, var(--color-bg), transparent)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Scrolling track — duplicated for seamless loop */}
+        <div style={{ display: 'flex', gap: 10, width: 'max-content', animation: 'marquee 28s linear infinite' }}>
+          {[...BANKS, ...BANKS].map((bank, i) => (
+            <span key={i} style={{
+              display: 'inline-flex', alignItems: 'center',
+              padding: '6px 16px', borderRadius: 'var(--radius-pill)',
+              border: '1px solid var(--color-border-solid)',
+              background: 'var(--color-card)',
+              fontSize: 12, fontWeight: 600, fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-2)', whiteSpace: 'nowrap',
+              letterSpacing: '0.04em', textTransform: 'uppercase' as const,
+            }}>
+              {bank}
+            </span>
+          ))}
+        </div>
       </div>
 
       <input ref={fileRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileInput} />
+
+      <style>{`
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+      `}</style>
     </div>
   )
 
