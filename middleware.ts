@@ -35,7 +35,7 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const PROTECTED = ['/overview', '/balances', '/transactions', '/bills', '/expenses', '/goals', '/budget', '/upload']
+  const PROTECTED = ['/', '/overview', '/balances', '/transactions', '/bills', '/expenses', '/goals', '/budget', '/upload', '/settings', '/profile']
 
   // Redirect unauthenticated users away from protected routes
   if (!user && PROTECTED.some(r => pathname === r || pathname.startsWith(r + '/'))) {
