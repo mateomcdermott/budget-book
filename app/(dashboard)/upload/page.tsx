@@ -274,18 +274,23 @@ export default function UploadPage() {
       <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 960, margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
-          <div>
-            <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--color-text-1)', marginBottom: 2 }}>
-              {fileName} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-3)' }}>({source})</span>
-            </p>
-            <p style={{ fontSize: 13, color: 'var(--color-text-2)' }}>
-              {transactions.length} transactions found · {toImport} will be imported
-              {dupes > 0 && ` · ${dupes} possible duplicate${dupes !== 1 ? 's' : ''} flagged`}
-            </p>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--color-text-1)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {fileName} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-3)' }}>({source})</span>
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--color-text-2)' }}>
+                {transactions.length} found · {toImport} importing
+                {dupes > 0 && ` · ${dupes} flagged`}
+              </p>
+            </div>
+            <button onClick={reset} style={{ ...btnGhost, height: 36, padding: '0 14px', fontSize: 13, flexShrink: 0 }}>
+              <X size={13} />{!isMobile && ' Cancel'}
+            </button>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            {dupes > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {flaggedIdxs.length > 0 && (
               <button
                 onClick={() => {
                   const el = document.getElementById(`tx-row-${flaggedIdxs[0]}`)
@@ -293,26 +298,29 @@ export default function UploadPage() {
                   el?.animate([{ background: 'rgba(251,191,36,0.3)' }, { background: 'transparent' }], { duration: 1200, easing: 'ease-out' })
                 }}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
+                  display: 'flex', alignItems: 'center', gap: 6, flex: isMobile ? '1' : 'none',
                   height: 42, padding: '0 16px', borderRadius: 'var(--radius-pill)',
                   background: '#FEF3C7', border: '1.5px solid #FDE68A',
                   fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
-                  color: '#92400E', cursor: 'pointer', whiteSpace: 'nowrap',
+                  color: '#92400E', cursor: 'pointer', justifyContent: 'center',
                 }}
               >
                 <AlertCircle size={14} />
                 {flaggedIdxs.length} to review
               </button>
             )}
-            <button onClick={reset} style={btnGhost}><X size={13} /> Cancel</button>
-            <button onClick={handleConfirm} disabled={importing} style={{ ...btnPrimary, opacity: importing ? 0.6 : 1 }}>
+            <button
+              onClick={handleConfirm}
+              disabled={importing}
+              style={{ ...btnPrimary, height: 42, flex: isMobile ? '1' : 'none', justifyContent: 'center', opacity: importing ? 0.6 : 1 }}
+            >
               {importing ? 'Importing…' : `Import ${toImport}`} {!importing && <ArrowRight size={14} />}
             </button>
           </div>
         </div>
 
         {/* Metrics bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
           {[
             { label: 'Importing',  value: `${toImport}`,                      sub: 'transactions',  color: 'var(--color-text-1)',  bg: 'var(--color-card)' },
             { label: 'Expenses',   value: fmt(totalExpenses),                  sub: 'debits',        color: 'var(--color-expense)', bg: 'var(--color-expense-light)' },
@@ -362,82 +370,121 @@ export default function UploadPage() {
           </div>
         )}
 
-        {/* Table */}
-        <div style={{ ...cardBase, overflow: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: 'var(--font-body)', minWidth: 600 }}>
-            <thead>
-              <tr style={{ background: 'var(--color-bg)' }}>
-                {['Date', 'Name', 'Category', 'Amount', 'Status', 'Action'].map(h => (
-                  <th key={h} style={{
-                    padding: '10px 14px', textAlign: h === 'Amount' ? 'right' : 'left',
-                    fontSize: 11, fontWeight: 700, color: 'var(--color-text-3)',
-                    textTransform: 'uppercase', letterSpacing: '0.04em',
-                    borderBottom: '1px solid var(--color-border-solid)', whiteSpace: 'nowrap',
-                  }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((tx, i) => {
-                const dupe = dupeColor(tx.duplicate_status)
-                const isSkip = tx._action === 'skip'
-                return (
-                  <tr key={i} id={`tx-row-${i}`} style={{
-                    borderBottom: i < transactions.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
-                    background: isSkip ? 'var(--color-bg)' : 'transparent',
-                    opacity: isSkip ? 0.55 : 1,
-                  }}>
-                    <td style={{ padding: '10px 14px', color: 'var(--color-text-2)', whiteSpace: 'nowrap' }}>{tx.date}</td>
-                    <td style={{ padding: '10px 14px', color: 'var(--color-text-1)', fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.name}</td>
-                    <td style={{ padding: '10px 14px', color: 'var(--color-text-2)' }}>{tx.category || '—'}</td>
-                    <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: tx.amount >= 0 ? 'var(--color-income)' : 'var(--color-expense)', whiteSpace: 'nowrap' }}>
-                      {tx.amount >= 0 ? '+' : '−'}{fmt(tx.amount)}
-                    </td>
-                    <td style={{ padding: '10px 14px' }}>
+        {/* Transaction list */}
+        {isMobile ? (
+          <div style={{ ...cardBase }}>
+            {transactions.map((tx, i) => {
+              const dupe = dupeColor(tx.duplicate_status)
+              const isSkip = tx._action === 'skip'
+              const isIncome = tx.amount >= 0
+              return (
+                <div key={i} id={`tx-row-${i}`} style={{
+                  padding: '14px 16px',
+                  borderBottom: i < transactions.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
+                  background: isSkip ? 'var(--color-bg)' : 'transparent',
+                  opacity: isSkip ? 0.5 : 1,
+                  transition: 'opacity 0.15s',
+                }}>
+                  {/* Top row: name + amount */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{tx.name}</p>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: isIncome ? 'var(--color-income)' : 'var(--color-expense)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {isIncome ? '+' : '−'}{fmt(tx.amount)}
+                    </span>
+                  </div>
+                  {/* Bottom row: date · category + badge + actions */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                      <span style={{ fontSize: 11, color: 'var(--color-text-3)', whiteSpace: 'nowrap' }}>{tx.date}</span>
+                      {tx.category && <span style={{ fontSize: 11, color: 'var(--color-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>· {tx.category}</span>}
                       {tx._isPayment ? (
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>
-                          Payment
-                        </span>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--radius-pill)', background: 'var(--color-primary-light)', color: 'var(--color-primary)', flexShrink: 0 }}>Payment</span>
                       ) : dupe ? (
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: dupe.bg, color: dupe.color }}>
-                          {dupe.label}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--color-income-light)', color: 'var(--color-income)' }}>
-                          New
-                        </span>
-                      )}
-                    </td>
-                    <td style={{ padding: '10px 14px' }}>
-                      <div style={{ display: 'flex', gap: 4 }}>
-                        {(['insert', 'skip'] as const).map(action => (
-                          <button
-                            key={action}
-                            onClick={() => toggleAction(i, action)}
-                            style={{
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 'var(--radius-pill)', background: dupe.bg, color: dupe.color, flexShrink: 0 }}>{dupe.label}</span>
+                      ) : null}
+                    </div>
+                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                      {(['insert', 'skip'] as const).map(action => (
+                        <button key={action} onClick={() => toggleAction(i, action)} style={{
+                          fontSize: 11, fontWeight: 600, padding: '4px 10px',
+                          borderRadius: 'var(--radius-pill)', cursor: 'pointer',
+                          fontFamily: 'var(--font-body)',
+                          border: tx._action === action ? 'none' : '1px solid var(--color-border-solid)',
+                          background: tx._action === action ? (action === 'insert' ? 'var(--color-primary)' : 'var(--color-expense-light)') : 'transparent',
+                          color: tx._action === action ? (action === 'insert' ? '#fff' : 'var(--color-expense)') : 'var(--color-text-3)',
+                        }}>
+                          {action === 'insert' ? 'Import' : 'Skip'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ ...cardBase, overflow: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, fontFamily: 'var(--font-body)', minWidth: 600 }}>
+              <thead>
+                <tr style={{ background: 'var(--color-bg)' }}>
+                  {['Date', 'Name', 'Category', 'Amount', 'Status', 'Action'].map(h => (
+                    <th key={h} style={{
+                      padding: '10px 14px', textAlign: h === 'Amount' ? 'right' : 'left',
+                      fontSize: 11, fontWeight: 700, color: 'var(--color-text-3)',
+                      textTransform: 'uppercase', letterSpacing: '0.04em',
+                      borderBottom: '1px solid var(--color-border-solid)', whiteSpace: 'nowrap',
+                    }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((tx, i) => {
+                  const dupe = dupeColor(tx.duplicate_status)
+                  const isSkip = tx._action === 'skip'
+                  return (
+                    <tr key={i} id={`tx-row-${i}`} style={{
+                      borderBottom: i < transactions.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
+                      background: isSkip ? 'var(--color-bg)' : 'transparent',
+                      opacity: isSkip ? 0.55 : 1,
+                    }}>
+                      <td style={{ padding: '10px 14px', color: 'var(--color-text-2)', whiteSpace: 'nowrap' }}>{tx.date}</td>
+                      <td style={{ padding: '10px 14px', color: 'var(--color-text-1)', fontWeight: 500, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.name}</td>
+                      <td style={{ padding: '10px 14px', color: 'var(--color-text-2)' }}>{tx.category || '—'}</td>
+                      <td style={{ padding: '10px 14px', textAlign: 'right', fontWeight: 700, color: tx.amount >= 0 ? 'var(--color-income)' : 'var(--color-expense)', whiteSpace: 'nowrap' }}>
+                        {tx.amount >= 0 ? '+' : '−'}{fmt(tx.amount)}
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        {tx._isPayment ? (
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}>Payment</span>
+                        ) : dupe ? (
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: dupe.bg, color: dupe.color }}>{dupe.label}</span>
+                        ) : (
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 'var(--radius-pill)', background: 'var(--color-income-light)', color: 'var(--color-income)' }}>New</span>
+                        )}
+                      </td>
+                      <td style={{ padding: '10px 14px' }}>
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          {(['insert', 'skip'] as const).map(action => (
+                            <button key={action} onClick={() => toggleAction(i, action)} style={{
                               fontSize: 11, fontWeight: 600, padding: '3px 10px',
                               borderRadius: 'var(--radius-pill)', cursor: 'pointer',
                               fontFamily: 'var(--font-body)',
                               border: tx._action === action ? 'none' : '1px solid var(--color-border-solid)',
-                              background: tx._action === action
-                                ? (action === 'insert' ? 'var(--color-primary)' : 'var(--color-expense-light)')
-                                : 'transparent',
-                              color: tx._action === action
-                                ? (action === 'insert' ? '#fff' : 'var(--color-expense)')
-                                : 'var(--color-text-3)',
-                            }}
-                          >
-                            {action === 'insert' ? 'Import' : 'Skip'}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                              background: tx._action === action ? (action === 'insert' ? 'var(--color-primary)' : 'var(--color-expense-light)') : 'transparent',
+                              color: tx._action === action ? (action === 'insert' ? '#fff' : 'var(--color-expense)') : 'var(--color-text-3)',
+                            }}>
+                              {action === 'insert' ? 'Import' : 'Skip'}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     )
   }
