@@ -330,12 +330,14 @@ export function parseCSVText(text: string): ParseResult {
     transactions = parseGeneric(rows, headers).filter(t => t.date && t.name)
   }
 
-  // Deduplicate by raw_hash
-  const seen = new Set<string>()
-  const unique = transactions.filter(t => {
-    if (seen.has(t.raw_hash)) return false
-    seen.add(t.raw_hash)
-    return true
+  // Make hashes unique per file so two legitimately identical rows
+  // (e.g. two MBTA rides same day same fare) are both kept.
+  // Cross-upload duplicates are caught later by flagDuplicates().
+  const hashCount = new Map<string, number>()
+  const unique = transactions.map(t => {
+    const n = hashCount.get(t.raw_hash) ?? 0
+    hashCount.set(t.raw_hash, n + 1)
+    return n === 0 ? t : { ...t, raw_hash: `${t.raw_hash}_${n}` }
   })
 
   return { source, transactions: unique, errors }
