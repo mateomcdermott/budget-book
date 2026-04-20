@@ -28,11 +28,12 @@ function BottomNav() {
   return (
     <nav style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
-      height: 60, background: 'var(--color-card)',
+      background: 'var(--color-card)',
       borderTop: '1px solid var(--color-border-solid)',
-      display: 'flex', alignItems: 'stretch',
+      display: 'flex', alignItems: 'flex-start',
       zIndex: 50,
-      paddingBottom: 'env(safe-area-inset-bottom)',
+      paddingTop: 8,
+      paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
     }}>
       {items.map(({ href, label, Icon }) => {
         const active = pathname === href || pathname.startsWith(href + '/')
@@ -85,7 +86,7 @@ function Inner({ children }: { children: ReactNode }) {
         <Header />
         <main style={{
           flex: 1,
-          paddingBottom: isMobile ? 68 : 0,
+          paddingBottom: isMobile ? 80 : 0,
           minWidth: 0, overflowX: 'hidden',
         }}>
           {children}
