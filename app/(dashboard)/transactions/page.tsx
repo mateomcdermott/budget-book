@@ -7,6 +7,7 @@ import {
   UtensilsCrossed, Car, ShoppingBag, Heart, Tv, Zap,
   Home, Plane, BookOpen, CreditCard, Tag, Search, Download,
 } from 'lucide-react'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 })
@@ -50,6 +51,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'all' | 'income' | 'expense'>('all')
   const [search, setSearch] = useState('')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     async function load() {
@@ -85,34 +87,16 @@ export default function TransactionsPage() {
   })
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1180, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 1180, margin: '0 auto' }}>
       {/* Toolbar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
-        {/* Tabs */}
-        <div style={{ display: 'flex', gap: 4, background: 'var(--color-bg)', borderRadius: 12, padding: 4, border: '1px solid var(--color-border-solid)' }}>
-          {(['all', 'income', 'expense'] as const).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>{t}</button>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, flex: 1, maxWidth: 480, alignItems: 'center' }}>
-          {/* Search */}
-          <div style={{ position: 'relative', flex: 1 }}>
-            <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search name or category…"
-              style={{
-                width: '100%', height: 40, borderRadius: 12,
-                border: '1.5px solid var(--color-border-solid)',
-                background: 'var(--color-card)', padding: '0 14px 0 36px',
-                fontSize: 13, fontFamily: 'var(--font-body)', color: 'var(--color-text-1)',
-                outline: 'none', boxSizing: 'border-box',
-              }}
-            />
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', gap: 4, background: 'var(--color-bg)', borderRadius: 12, padding: 4, border: '1px solid var(--color-border-solid)' }}>
+            {(['all', 'income', 'expense'] as const).map(t => (
+              <button key={t} onClick={() => setTab(t)} style={tabStyle(tab === t)}>{t}</button>
+            ))}
           </div>
-
           {/* Export */}
           <button
             onClick={() => exportCSV(filtered)}
@@ -122,12 +106,28 @@ export default function TransactionsPage() {
               border: '1.5px solid var(--color-border-solid)',
               background: 'var(--color-card)', fontSize: 13, fontWeight: 600,
               color: 'var(--color-text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-              whiteSpace: 'nowrap',
+              whiteSpace: 'nowrap', flexShrink: 0,
             }}
           >
             <Download size={13} />
-            Export CSV
+            {!isMobile && 'Export CSV'}
           </button>
+        </div>
+        {/* Search — full width row */}
+        <div style={{ position: 'relative' }}>
+          <Search size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-3)' }} />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search name or category…"
+            style={{
+              width: '100%', height: 40, borderRadius: 12,
+              border: '1.5px solid var(--color-border-solid)',
+              background: 'var(--color-card)', padding: '0 14px 0 36px',
+              fontSize: 13, fontFamily: 'var(--font-body)', color: 'var(--color-text-1)',
+              outline: 'none', boxSizing: 'border-box',
+            }}
+          />
         </div>
       </div>
 
@@ -139,14 +139,17 @@ export default function TransactionsPage() {
         border: '1px solid var(--color-border-solid)',
         overflow: 'hidden',
       }}>
+        <div style={{ overflowX: 'auto' }}>
         {/* Table header */}
         <div style={{
-          display: 'grid', gridTemplateColumns: '44px 1fr 120px 120px 100px',
-          padding: '12px 20px',
+          display: 'grid',
+          gridTemplateColumns: isMobile ? '36px 1fr 90px' : '44px 1fr 120px 120px 100px',
+          padding: '12px 16px',
           borderBottom: '1px solid var(--color-border-solid)',
           background: 'var(--color-bg)',
+          minWidth: isMobile ? 0 : 560,
         }}>
-          {['', 'Name', 'Amount', 'Date', 'Type'].map(h => (
+          {(isMobile ? ['', 'Name', 'Amount'] : ['', 'Name', 'Amount', 'Date', 'Type']).map(h => (
             <span key={h} style={{ fontSize: 12, fontWeight: 700, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {h}
             </span>
@@ -173,8 +176,9 @@ export default function TransactionsPage() {
               <div
                 key={t.id}
                 style={{
-                  display: 'grid', gridTemplateColumns: '44px 1fr 120px 120px 100px',
-                  alignItems: 'center', padding: '14px 20px',
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '36px 1fr 90px' : '44px 1fr 120px 120px 100px',
+                  alignItems: 'center', padding: isMobile ? '12px 16px' : '14px 20px',
                   borderBottom: i < filtered.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
                   transition: 'background 0.1s',
                 }}
@@ -183,43 +187,46 @@ export default function TransactionsPage() {
               >
                 {/* Icon */}
                 <div style={{
-                  width: 34, height: 34, borderRadius: 10,
+                  width: isMobile ? 28 : 34, height: isMobile ? 28 : 34, borderRadius: 8,
                   background: isIncome ? 'var(--color-income-light)' : 'var(--color-expense-light)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: isIncome ? 'var(--color-income)' : 'var(--color-expense)',
                 }}>
-                  <Icon size={14} />
+                  <Icon size={13} />
                 </div>
 
                 {/* Name + category */}
-                <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-1)', marginBottom: 1 }}>{t.name}</p>
-                  <p style={{ fontSize: 12, color: 'var(--color-text-3)' }}>{t.category}</p>
+                <div style={{ minWidth: 0 }}>
+                  <p style={{ fontSize: isMobile ? 13 : 14, fontWeight: 600, color: 'var(--color-text-1)', marginBottom: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</p>
+                  <p style={{ fontSize: 11, color: 'var(--color-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{isMobile ? t.date : t.category}</p>
                 </div>
 
                 {/* Amount */}
-                <span style={{ fontWeight: 700, fontSize: 14, color: isIncome ? 'var(--color-income)' : 'var(--color-expense)' }}>
+                <span style={{ fontWeight: 700, fontSize: isMobile ? 13 : 14, color: isIncome ? 'var(--color-income)' : 'var(--color-expense)', textAlign: 'right' }}>
                   {isIncome ? '+' : '−'}{fmt(Math.abs(t.amount))}
                 </span>
 
-                {/* Date */}
-                <span style={{ fontSize: 13, color: 'var(--color-text-2)' }}>{t.date}</span>
+                {/* Date — desktop only */}
+                {!isMobile && <span style={{ fontSize: 13, color: 'var(--color-text-2)' }}>{t.date}</span>}
 
-                {/* Type badge */}
-                <span style={{
-                  fontSize: 11, fontWeight: 700, padding: '3px 10px',
-                  borderRadius: 'var(--radius-pill)',
-                  background: isIncome ? 'var(--color-income-light)' : 'var(--color-expense-light)',
-                  color: isIncome ? 'var(--color-income)' : 'var(--color-expense)',
-                  display: 'inline-block',
-                }}>
-                  {t.type}
-                </span>
+                {/* Type badge — desktop only */}
+                {!isMobile && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                    borderRadius: 'var(--radius-pill)',
+                    background: isIncome ? 'var(--color-income-light)' : 'var(--color-expense-light)',
+                    color: isIncome ? 'var(--color-income)' : 'var(--color-expense)',
+                    display: 'inline-block',
+                  }}>
+                    {t.type}
+                  </span>
+                )}
               </div>
             )
           })
         )}
 
+        </div>
         {!loading && filtered.length > 0 && (
           <div style={{
             padding: '12px 20px',

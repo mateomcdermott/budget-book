@@ -8,6 +8,7 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from 'recharts'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -185,6 +186,7 @@ export default function OverviewPage() {
   const [areaTab, setAreaTab]               = useState<'Incomes' | 'Expense' | 'Savings'>('Expense')
   const [sortCol, setSortCol]               = useState<'name' | 'category' | 'amount'>('amount')
   const [sortDir, setSortDir]               = useState<'asc' | 'desc'>('desc')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     async function load() {
@@ -371,7 +373,7 @@ export default function OverviewPage() {
   )
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1280, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 1280, margin: '0 auto' }}>
 
       {/* ── Filter bar ──────────────────────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
@@ -455,16 +457,16 @@ export default function OverviewPage() {
       </div>
 
       {/* ── KPI row ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? 10 : 16, marginBottom: 20 }}>
         {[
           { value: fmtK(avgMonthlyExpenses), label: 'Avg Monthly Expenses' },
           { value: fmtK(totalRent || 0),     label: 'Total Rent'           },
           { value: fmtK(avgMonthlyIncome),   label: 'Avg Monthly Income'   },
           { value: fmtK(totalIncome),        label: 'Total Income'         },
         ].map(({ value, label }) => (
-          <div key={label} style={{ ...card, padding: '20px 24px', textAlign: 'center' }}>
+          <div key={label} style={{ ...card, padding: isMobile ? '14px 12px' : '20px 24px', textAlign: 'center' }}>
             <div style={{
-              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 26,
+              fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: isMobile ? 18 : 26,
               color: 'var(--color-text-1)', letterSpacing: '-0.02em', lineHeight: 1.1,
               marginBottom: 6,
             }}>
@@ -525,7 +527,7 @@ export default function OverviewPage() {
       </div>
 
       {/* ── Income & Spending donuts (2 columns) ────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
 
         {/* LEFT: Income by Category */}
         <div style={{ ...card, padding: '20px 20px 16px', overflow: 'visible' }}>
@@ -628,9 +630,9 @@ export default function OverviewPage() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 40 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center', gap: isMobile ? 20 : 40 }}>
           {/* Donut */}
-          <div style={{ position: 'relative', flexShrink: 0, width: 180, height: 180 }}>
+          <div style={{ position: 'relative', flexShrink: 0, width: isMobile ? '100%' : 180, height: 180 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -666,7 +668,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          {/* Breakdown — 3 buckets spread horizontally */}
+          {/* Breakdown — 3 buckets */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, flex: 1 }}>
             {donut5030.map(({ name, pct, value, color }, i) => (
               <div
@@ -686,7 +688,7 @@ export default function OverviewPage() {
                   </span>
                 </div>
                 <div style={{
-                  fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 28,
+                  fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: isMobile ? 18 : 28,
                   color: 'var(--color-text-1)', letterSpacing: '-0.02em', lineHeight: 1.1,
                 }}>
                   {fmtK(value)}

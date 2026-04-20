@@ -10,6 +10,7 @@ import {
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid,
 } from 'recharts'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -66,6 +67,7 @@ export default function ExpensesPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [loading, setLoading] = useState(true)
   const [toggle, setToggle] = useState<'monthly' | 'weekly'>('monthly')
+  const isMobile = useIsMobile()
 
   useEffect(() => {
     async function load() {
@@ -166,11 +168,11 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1180, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 1180, margin: '0 auto' }}>
 
       {/* Comparison Chart */}
-      <div style={{ ...cardBase, padding: '24px', marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ ...cardBase, padding: isMobile ? '16px' : '24px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
           <div>
             <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 15, color: 'var(--color-text-1)', marginBottom: 2 }}>
               Expense Comparison
@@ -192,7 +194,7 @@ export default function ExpensesPage() {
                 color: 'var(--color-text-2)', cursor: 'pointer', fontFamily: 'var(--font-body)',
               }}
             >
-              <Download size={12} /> Export
+              <Download size={12} /> {!isMobile && 'Export'}
             </button>
           </div>
         </div>

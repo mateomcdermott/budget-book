@@ -12,6 +12,7 @@ import {
   UtensilsCrossed, Car, ShoppingBag, Heart, Tv, Zap,
   Home, Plane, BookOpen, CreditCard, Tag,
 } from 'lucide-react'
+import { useIsMobile } from '@/lib/hooks/useIsMobile'
 
 const fmt = (n: number) =>
   n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
@@ -113,6 +114,7 @@ export default function BudgetPage() {
   const [showModal, setShowModal] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({ category: '', limit_amount: '', spent: '0' })
+  const isMobile = useIsMobile()
 
   useEffect(() => { load() }, [])
 
@@ -159,10 +161,10 @@ export default function BudgetPage() {
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: 1180, margin: '0 auto' }}>
+    <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 1180, margin: '0 auto' }}>
 
       {/* Top stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: 12, marginBottom: 20 }}>
         <StatCard
           label="Total Budget"
           value={fmt(totalBudget)}
