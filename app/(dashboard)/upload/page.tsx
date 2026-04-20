@@ -247,14 +247,18 @@ export default function UploadPage() {
 
   // ── PREVIEW ───────────────────────────────────────────────────────────────
   if (stage === 'preview') {
-    const toImport = transactions.filter(t => t._action !== 'skip').length
+    const active  = transactions.filter(t => t._action !== 'skip')
+    const toImport = active.length
     const dupes    = transactions.filter(t => t.duplicate_status !== 'unique').length
+    const totalExpenses = active.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
+    const totalIncome   = active.filter(t => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
+    const net = totalIncome - totalExpenses
 
     return (
       <div style={{ padding: isMobile ? '16px' : '24px', maxWidth: 960, margin: '0 auto' }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
           <div>
             <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: 'var(--color-text-1)', marginBottom: 2 }}>
               {fileName} <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--color-text-3)' }}>({source})</span>
@@ -270,6 +274,25 @@ export default function UploadPage() {
               {importing ? 'Importing…' : `Import ${toImport}`} {!importing && <ArrowRight size={14} />}
             </button>
           </div>
+        </div>
+
+        {/* Metrics bar */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 16 }}>
+          {[
+            { label: 'Importing',  value: `${toImport}`,                      sub: 'transactions',  color: 'var(--color-text-1)',  bg: 'var(--color-card)' },
+            { label: 'Expenses',   value: fmt(totalExpenses),                  sub: 'debits',        color: 'var(--color-expense)', bg: 'var(--color-expense-light)' },
+            { label: 'Income',     value: fmt(totalIncome),                    sub: 'credits',       color: 'var(--color-income)',  bg: 'var(--color-income-light)' },
+            { label: 'Net',        value: `${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}`, sub: 'balance', color: net >= 0 ? 'var(--color-income)' : 'var(--color-expense)', bg: 'var(--color-card)' },
+          ].map(({ label, value, sub, color, bg }) => (
+            <div key={label} style={{
+              background: bg, borderRadius: 16, padding: isMobile ? '12px 14px' : '14px 18px',
+              border: '1px solid var(--color-border-solid)', boxShadow: 'var(--shadow-card)',
+            }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{label}</p>
+              <p style={{ fontSize: isMobile ? 15 : 18, fontWeight: 700, color, fontFamily: 'var(--font-body)', lineHeight: 1 }}>{value}</p>
+              <p style={{ fontSize: 11, color: 'var(--color-text-3)', fontFamily: 'var(--font-body)', marginTop: 3 }}>{sub}</p>
+            </div>
+          ))}
         </div>
 
         {/* Dupe alert */}
