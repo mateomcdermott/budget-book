@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, CheckCircle, ArrowRight, AlertTriangle, X } from 'lucide-react'
+import { Upload, CheckCircle, ArrowRight, AlertTriangle, X, AlertCircle } from 'lucide-react'
 import { Lock, ShieldCheck, EyeOff, Ban } from 'lucide-react'
 import type { ParsedTransaction } from '@/lib/csvParser'
 import { useIsMobile } from '@/lib/hooks/useIsMobile'
@@ -249,7 +249,10 @@ export default function UploadPage() {
   if (stage === 'preview') {
     const active  = transactions.filter(t => t._action !== 'skip')
     const toImport = active.length
-    const dupes    = transactions.filter(t => t.duplicate_status !== 'unique').length
+    const flaggedIdxs = transactions
+      .map((t, i) => t.duplicate_status !== 'unique' ? i : -1)
+      .filter(i => i !== -1)
+    const dupes = flaggedIdxs.length
     const totalExpenses = active.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0)
     const totalIncome   = active.filter(t => t.amount >= 0).reduce((s, t) => s + t.amount, 0)
     const net = totalIncome - totalExpenses
@@ -268,7 +271,26 @@ export default function UploadPage() {
               {dupes > 0 && ` · ${dupes} possible duplicate${dupes !== 1 ? 's' : ''} flagged`}
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            {dupes > 0 && (
+              <button
+                onClick={() => {
+                  const el = document.getElementById(`tx-row-${flaggedIdxs[0]}`)
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  el?.animate([{ background: 'rgba(251,191,36,0.3)' }, { background: 'transparent' }], { duration: 1200, easing: 'ease-out' })
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  height: 42, padding: '0 16px', borderRadius: 'var(--radius-pill)',
+                  background: '#FEF3C7', border: '1.5px solid #FDE68A',
+                  fontSize: 13, fontWeight: 600, fontFamily: 'var(--font-body)',
+                  color: '#92400E', cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >
+                <AlertCircle size={14} />
+                {dupes} to review
+              </button>
+            )}
             <button onClick={reset} style={btnGhost}><X size={13} /> Cancel</button>
             <button onClick={handleConfirm} disabled={importing} style={{ ...btnPrimary, opacity: importing ? 0.6 : 1 }}>
               {importing ? 'Importing…' : `Import ${toImport}`} {!importing && <ArrowRight size={14} />}
@@ -335,7 +357,7 @@ export default function UploadPage() {
                 const dupe = dupeColor(tx.duplicate_status)
                 const isSkip = tx._action === 'skip'
                 return (
-                  <tr key={i} style={{
+                  <tr key={i} id={`tx-row-${i}`} style={{
                     borderBottom: i < transactions.length - 1 ? '1px solid var(--color-border-solid)' : 'none',
                     background: isSkip ? 'var(--color-bg)' : 'transparent',
                     opacity: isSkip ? 0.55 : 1,

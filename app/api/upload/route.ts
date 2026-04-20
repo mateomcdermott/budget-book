@@ -25,7 +25,14 @@ export async function POST(req: NextRequest) {
       .gte('date', dates[0])
       .lte('date', dates[dates.length - 1])
 
-    result.transactions = flagDuplicates(result.transactions, (existing ?? []) as { date: string; name: string; amount: number }[])
+    const preFlagged = result.transactions.map(t => t.duplicate_status)
+    const dbFlagged  = flagDuplicates(result.transactions, (existing ?? []) as { date: string; name: string; amount: number }[])
+    // Preserve within-batch duplicate status if DB check returned 'unique'
+    result.transactions = dbFlagged.map((tx, i) =>
+      preFlagged[i] === 'possible_duplicate' && tx.duplicate_status === 'unique'
+        ? { ...tx, duplicate_status: 'possible_duplicate' as const, duplicate_confidence: result.transactions[i].duplicate_confidence }
+        : tx
+    )
   }
 
   return NextResponse.json({
