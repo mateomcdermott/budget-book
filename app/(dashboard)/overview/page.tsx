@@ -530,7 +530,7 @@ export default function OverviewPage() {
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 20, marginBottom: 20 }}>
 
         {/* LEFT: Income by Category */}
-        <div style={{ ...card, padding: '20px 20px 16px', overflow: 'visible' }}>
+        <div style={{ ...card, padding: '20px 20px 16px', overflow: isMobile ? 'hidden' : 'visible' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-1)', marginBottom: 2 }}>
             Income by Category
           </p>
@@ -538,8 +538,8 @@ export default function OverviewPage() {
             Actual income · {fmtK(totalIncome)} total
           </p>
 
-          <div style={{ position: 'relative', overflow: 'visible' }}>
-            <ResponsiveContainer width="100%" height={290}>
+          <div style={{ position: 'relative', overflow: isMobile ? 'hidden' : 'visible' }}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 290}>
               <PieChart style={{ overflow: 'visible' }}>
                 <Pie
                   data={incomeDonut.length > 0 ? incomeDonut : emptySlice}
@@ -547,8 +547,8 @@ export default function OverviewPage() {
                   innerRadius={62} outerRadius={88}
                   paddingAngle={2}
                   dataKey="value"
-                  labelLine={incomeDonut.length > 0 ? { stroke: '#9CA3AF', strokeWidth: 0.8 } : false}
-                  label={incomeDonut.length > 0 ? renderOutsideLabel : false}
+                  labelLine={(!isMobile && incomeDonut.length > 0) ? { stroke: '#9CA3AF', strokeWidth: 0.8 } : false}
+                  label={(!isMobile && incomeDonut.length > 0) ? renderOutsideLabel : false}
                 >
                   {(incomeDonut.length > 0 ? incomeDonut : emptySlice).map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
@@ -574,7 +574,7 @@ export default function OverviewPage() {
         </div>
 
         {/* RIGHT: Spending by Category */}
-        <div style={{ ...card, padding: '20px 20px 16px', overflow: 'visible' }}>
+        <div style={{ ...card, padding: '20px 20px 16px', overflow: isMobile ? 'hidden' : 'visible' }}>
           <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-1)', marginBottom: 2 }}>
             Spending by Category
           </p>
@@ -582,8 +582,8 @@ export default function OverviewPage() {
             Actual expenses · {fmtK(totalExpenses)} total
           </p>
 
-          <div style={{ position: 'relative', overflow: 'visible' }}>
-            <ResponsiveContainer width="100%" height={290}>
+          <div style={{ position: 'relative', overflow: isMobile ? 'hidden' : 'visible' }}>
+            <ResponsiveContainer width="100%" height={isMobile ? 220 : 290}>
               <PieChart style={{ overflow: 'visible' }}>
                 <Pie
                   data={categoryDonut.length > 0 ? categoryDonut : emptySlice}
@@ -591,8 +591,8 @@ export default function OverviewPage() {
                   innerRadius={62} outerRadius={88}
                   paddingAngle={2}
                   dataKey="value"
-                  labelLine={categoryDonut.length > 0 ? { stroke: '#9CA3AF', strokeWidth: 0.8 } : false}
-                  label={categoryDonut.length > 0 ? renderOutsideLabel : false}
+                  labelLine={(!isMobile && categoryDonut.length > 0) ? { stroke: '#9CA3AF', strokeWidth: 0.8 } : false}
+                  label={(!isMobile && categoryDonut.length > 0) ? renderOutsideLabel : false}
                 >
                   {(categoryDonut.length > 0 ? categoryDonut : emptySlice).map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
@@ -636,19 +636,19 @@ export default function OverviewPage() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={donut5030}
+                  data={totalIncome > 0 ? donut5030 : emptySlice}
                   cx="50%" cy="50%"
                   innerRadius={52} outerRadius={74}
-                  paddingAngle={3}
+                  paddingAngle={totalIncome > 0 ? 3 : 0}
                   dataKey="value"
                   labelLine={false}
                   label={false}
                 >
-                  {donut5030.map((entry, i) => (
+                  {(totalIncome > 0 ? donut5030 : emptySlice).map((entry, i) => (
                     <Cell key={i} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(v: number) => fmt(v)} />
+                {totalIncome > 0 && <Tooltip formatter={(v: number) => fmt(v)} />}
               </PieChart>
             </ResponsiveContainer>
             <div style={{
@@ -674,7 +674,7 @@ export default function OverviewPage() {
               <div
                 key={name}
                 style={{
-                  padding: '0 32px',
+                  padding: isMobile ? '0 12px' : '0 32px',
                   borderLeft: i > 0 ? '1px solid var(--color-border-solid)' : 'none',
                 }}
               >
